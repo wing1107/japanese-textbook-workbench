@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root{
+  --bg:#f7f6f2; --card:#ffffff; --ink:#2c2c2a; --mut:#6b6a64; --line:#e2e0d8;
+  --blue:#185fa5; --blue-l:#e6f1fb; --teal:#0f6e56; --teal-l:#e1f5ee;
+  --amber:#854f0b; --amber-l:#faeeda; --red:#a32d2d; --red-l:#fcebeb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Sans GB","Yu Gothic UI","Meiryo","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.7}
+.jp{font-family:"Hiragino Mincho ProN","Yu Mincho","MS Mincho",serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:20px 24px 0}
+h1{margin:0;font-size:20px;font-weight:500}
+.sub{margin:4px 0 0;color:var(--mut);font-size:13px}
+nav{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+nav button{border:1px solid var(--line);background:var(--bg);color:var(--mut);
+  padding:7px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;border-bottom:none}
+nav button.on{background:var(--card);color:var(--blue);font-weight:500}
+main{max-width:960px;margin:0 auto;padding:20px 16px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+h2{font-size:16px;font-weight:500;margin:0 0 10px;color:var(--blue)}
+h3{font-size:14px;font-weight:500;margin:18px 0 6px}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;margin-left:8px;vertical-align:2px}
+.tag.b{background:var(--blue-l);color:var(--blue)}
+.tag.t{background:var(--teal-l);color:var(--teal)}
+.tag.a{background:var(--amber-l);color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f1efe8;color:var(--mut);font-weight:500;text-align:left;padding:6px 8px;border:1px solid var(--line)}
+td{padding:6px 8px;border:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:#fbfaf7}
+.pat{background:var(--blue-l);border-left:3px solid var(--blue);padding:8px 12px;border-radius:0 8px 8px 0;
+  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:14px;margin:6px 0}
+.note{background:var(--amber-l);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0;color:var(--amber)}
+.ex{margin:4px 0;padding-left:14px;border-left:2px solid var(--line)}
+.ex .cn{color:var(--mut);font-size:12px}
+.exq{margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.exq .no{color:var(--blue);font-weight:500;margin-right:6px}
+.exq .tp{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:8px;padding:0 6px;margin-right:6px}
+details{margin-top:6px}
+summary{cursor:pointer;color:var(--teal);font-size:13px;user-select:none}
+.ans{background:var(--teal-l);border-radius:8px;padding:8px 12px;margin-top:6px}
+.checkrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.checkrow:last-child{border-bottom:none}
+.checkrow input{width:16px;height:16px;accent-color:var(--teal)}
+.done{color:var(--teal)}
+.bar{height:8px;background:#eceae3;border-radius:6px;overflow:hidden;margin:8px 0 2px}
+.bar i{display:block;height:100%;background:var(--teal);transition:width .3s}
+.mut{color:var(--mut)} .sm{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.legend{font-size:12px;color:var(--mut);margin:6px 0 12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>__TITLE__</h1>
+  <p class="sub">__SUBTITLE__</p>
+  <nav id="tabs"></nav>
+</header>
+<main id="app"></main>
+
+<script>
+__DATA__
+
+/* ---------- 以下为固定渲染逻辑 ---------- */
+function loadState(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+function saveState(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function wordTable(lesson, cat){
+  const rows = L[lesson].words[cat] || [];
+  if(!rows.length) return "";
+  let h = "<h3>"+esc(cat)+" <span class='tag b'>"+rows.length+" 词</span></h3>";
+  const isVerb = cat === "動詞";
+  h += isVerb
+    ? "<table><tr><th style='width:22%'>ます形</th><th>辞书形</th><th style='width:8%'>类</th><th style='width:7%'>调</th><th>释义</th></tr>"
+    : "<table><tr><th style='width:26%'>单词</th><th style='width:22%'>读音</th><th style='width:10%'>调</th><th>释义</th></tr>";
+  rows.forEach(r=>{
+    h += "<tr class='jp'>";
+    if(isVerb){ h += "<td>"+esc(r[0])+"</td><td>"+esc(r[2])+"</td><td>"+esc(r[3])+"</td><td>"+esc(r[1])+"</td><td>"+esc(r[4])+"</td>"; }
+    else{ h += "<td>"+esc(r[0])+"</td><td>"+esc(r[1])+"</td><td>"+esc(r[2])+"</td><td>"+esc(r[3])+"</td>"; }
+    h += "</tr>";
+  });
+  return h+"</table>";
+}
+
+function lessonPage(id){
+  const d = L[id];
+  let h = "<div class='card'><h2>第"+id+"课 "+esc(d.t)+"<span class='tag b'>"+esc(d.src)+"</span></h2>";
+  h += "<div class='legend'>整理自教材原文，单词含音调（⓪①…为高音拍位置，▲ 为辅导用书补充词汇）。</div>";
+  h += "<h2>语法总结</h2>";
+  d.gram.forEach((g,i)=>{
+    h += "<div class='pat'>"+ (i+1) +".　"+ esc(g.p) +"</div>";
+    h += "<div><b>"+esc(g.n)+"</b></div><div class='sm'>"+esc(g.d)+"</div>";
+    (g.ex||[]).forEach(e=>{ h += "<div class='ex jp'><div>"+esc(e[0])+"</div><div class='cn'>"+esc(e[1])+"</div></div>"; });
+    if(g.note) h += "<div class='note'>"+esc(g.note)+"</div>";
+  });
+  h += "<h2 style='margin-top:22px'>单词分类汇总</h2>";
+  Object.keys(d.words).forEach(c=>{ h += wordTable(id,c); });
+  if(d.ex && d.ex.length){
+    h += "<h2 style='margin-top:22px'>练习（"+d.ex.length+"题）</h2>";
+    d.ex.forEach((e,i)=>{
+      h += "<div class='exq'><span class='no'>"+(i+1)+"</span><span class='tp'>"+esc(e.t)+"</span><span class='jp'>"+esc(e.q)+"</span>";
+      h += "<details><summary>看答案</summary><div class='ans'>"+esc(e.a)+"</div></details></div>";
+    });
+  }
+  h += "</div>";
+  return h;
+}
+
+function checkPage(){
+  const s = loadState();
+  let total=0, done=0;
+  let h = "<div class='card'><h2>复习打卡 <span class='tag t'>进度自动保存在本机</span></h2>";
+  h += "<div class='legend'>勾选后进度会自动记录在浏览器本地，换设备需重新勾选。</div>";
+  LESSON_IDS.forEach(id=>{
+    let dn=0;
+    h += "<h3>第"+id+"课 · "+esc(L[id].t)+"</h3>";
+    CHECKS.forEach((c,i)=>{
+      const k = id+"_"+i;
+      total++;
+      if(s[k]){dn++;done++;}
+      h += "<label class='checkrow'><input type='checkbox' data-k='"+k+"' "+(s[k]?"checked":"")+"> <span class='"+(s[k]?"done":"")+"'>"+esc(c)+"</span>"
+        + (s[k]&&s[k+"_d"] ? " <span class='sm mut'>（"+esc(s[k+"_d"])+"）</span>" : "")
+        + "</label>";
+    });
+    h += "<div class='bar'><i style='width:"+(dn/CHECKS.length*100)+"%'></i></div>";
+  });
+  h += "<h3>本组总进度</h3><div class='bar'><i style='width:"+(total?done/total*100:0)+"%'></i></div>"
+    + "<div class='sm mut'>"+done+" / "+total+" 项完成</div></div>";
+  return h;
+}
+
+function verbPage(){
+  let h = "<div class='card'><h2>动词变形总表 <span class='tag b'>"+VERBS.length+" 个动词</span></h2>";
+  h += "<div class='legend'>由辞书形按规则批量生成。<b>可能形</b>＝能～／<b>意志形</b>＝～吧、打算～／<b>命令形</b>＝（命令）做！／<b>禁止形</b>＝不许～／<b>假设形（ば形）</b>＝如果～就～／<b>使役形</b>＝让／使某人做～。★ 为特殊活用。</div>";
+  h += "<table><tr><th>ます形</th><th>辞书形</th><th>类</th><th>て形</th><th>た形</th><th>ない形</th>"
+     + "<th style='background:#eaf3e9'>可能形</th><th style='background:#eaf3e9'>意志形</th>"
+     + "<th style='background:#eaf3e9'>命令形</th><th style='background:#eaf3e9'>禁止形</th>"
+     + "<th style='background:#eaf3e9'>假设形</th><th style='background:#eaf3e9'>使役形</th><th>要点</th></tr>";
+  VERBS.forEach(v=>{
+    h += "<tr class='jp'>";
+    for(let i=0;i<6;i++) h += "<td>"+esc(v[i])+"</td>";
+    for(let i=7;i<13;i++) h += "<td style='background:#f3faf2'>"+esc(v[i])+"</td>";
+    h += "<td class='sm'>"+esc(v[6])+"</td></tr>";
+  });
+  h += "</table></div>";
+  return h;
+}
+
+const TABS = [["check","复习打卡"]].concat(LESSON_IDS.map(id=>["l"+id,"第"+id+"课"])).concat([["verbs","动词变形总表"]]);
+let cur = "check";
+
+function render(){
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = TABS.map(t=>"<button data-t='"+t[0]+"' class='"+(t[0]===cur?"on":"")+"'>"+t[1]+"</button>").join("");
+  nav.querySelectorAll("button").forEach(b=>b.onclick=()=>{cur=b.dataset.t;render();});
+  const app = document.getElementById("app");
+  if(cur==="check") app.innerHTML = checkPage();
+  else if(cur==="verbs") app.innerHTML = verbPage();
+  else app.innerHTML = lessonPage(parseInt(cur.slice(1),10));
+  app.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+    cb.onchange = ()=>{
+      const s = loadState();
+      s[cb.dataset.k] = cb.checked;
+      if(cb.checked) s[cb.dataset.k+"_d"] = new Date().toLocaleDateString("zh-CN");
+      saveState(s); render();
+    };
+  });
+}
+render();
+</script>
+</body>
+</html>

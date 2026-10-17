@@ -1,2 +1,112 @@
-# japanese-textbook-workbench
-Turn Japanese textbooks into an interactive review workspace (WorkBuddy skill)
+# japanese-textbook-workbench 安装与使用
+
+把一本日语教材（PDF / 图片 / docx）转成一套可交互的复习工作台：按课拆分的知识整理页（语法、单词分类、练习对答案、动词变形总表、复习打卡）＋ 总览首页 ＋ 供知识库检索的 Markdown 版。
+
+## 一、前置条件
+
+- WorkBuddy 客户端（用对话方式时需要）
+- Python 3.8 或更高版本（只跑脚本时需要）
+
+脚本**只用 Python 标准库**，不需要 `pip install` 任何东西。
+
+## 二、安装（放到哪里）
+
+把压缩包里的 `japanese-textbook-workbench` 整个文件夹解压到 **skills 目录**：
+
+| 系统 | 路径 |
+|---|---|
+| Windows | `C:\Users\<你的用户名>\.workbuddy\skills\` |
+| macOS / Linux | `~/.workbuddy/skills/` |
+
+解压后的结构必须是（注意不要多套一层文件夹）：
+
+```
+.workbuddy/skills/japanese-textbook-workbench/
+├── SKILL.md
+├── README.md
+├── assets/
+│   ├── index_template.html
+│   ├── page_template.html
+│   └── sample-lessons.json
+├── references/
+│   ├── data-schema.md
+│   └── extraction-guide.md
+└── scripts/
+    ├── build_workbench.py
+    └── conjugate.py
+```
+
+如果只想让某个项目使用，也可以放到该项目的 `.workbuddy/skills/` 下（项目级，仅该项目可见）。
+
+放好后**重启 WorkBuddy**，在对话框输入 `/`，列表里能看到 `japanese-textbook-workbench` 即为安装成功。
+
+## 三、用法 A：在对话里用（推荐）
+
+直接描述任务即可，skill 会自动匹配；也可以显式指定。
+
+```
+帮我用 japanese-textbook-workbench 处理这本教材：
+《大家的日语 初级2》，简称 minna2，输出到 D:\日语\初级2
+```
+
+接着把教材文件拖进对话。Agent 会：勘察课次 → 提取内容填 `lessons.json` → 跑脚本 → 验证页面。
+
+**必须告知的两件事**：
+
+1. **教材简称**（如 `minna2`）——用作打卡数据前缀。不同教材必须不同，否则复习进度会互相覆盖。
+2. **课次范围**——例如「第 26–50 课」，决定拆页与命名。
+
+## 四、用法 B：只跑脚本（不用 Agent）
+
+```bash
+python scripts/build_workbench.py lessons.json --out ./输出目录
+```
+
+可选参数：
+
+| 参数 | 作用 |
+|---|---|
+| `--out DIR` | 输出目录，默认 `<json 所在目录>/workbench` |
+| `--per-page N` | 每页含几课，默认 5 |
+| `--no-md` | 不生成 Markdown 检索版 |
+
+**关键限制：脚本不读 PDF。** 它只负责 `lessons.json → 页面`。那份 JSON 必须由你（或别的工具/模型）先按 `references/data-schema.md` 填好。
+
+最省事的起步方式：复制 `assets/sample-lessons.json`，把里面的课次、语法、单词换成你的教材内容，再跑脚本。先用 1 课试通，再批量填。
+
+字段要点：
+
+- 每课一个对象，`id` 为课号（整数），`title` 为课标题
+- 单词按类分组，`動詞` 这个键名不能改，动词变形表依赖它
+- 动词每行固定 5 项：`[ます形, 音调, 辞书形, 类型, 释义]`，类型只能是 `動Ⅰ` / `動Ⅱ` / `動Ⅲ`
+- 六种变形（可能形／意志形／命令形／禁止形／假设形／使役形）由脚本自动派生，不要手写
+
+## 五、产物说明
+
+| 文件 | 用途 |
+|---|---|
+| `index.html` | 工作台首页：全书进度、课组导航、逐课明细、全动词变形大全 |
+| `第X-Y课_知识整理.html` | 课组页：复习打卡 / 各课（语法＋单词＋练习）/ 动词变形总表 |
+| `第X-Y课_知识整理.md` | 纯文本版，供 ima 等知识库检索、手机阅读 |
+
+双击 `index.html` 即可用，无需联网、无需服务器。
+
+注意：**HTML 的交互功能（打卡、切页、搜索）只在浏览器里有效**。上传到知识库后只剩文字可读，勾选和搜索都会失效。
+
+## 六、常见问题
+
+**首页进度一直是 0？**
+首页读的是课组页写入的浏览器本地存储。两者必须在同一目录（本地）或同一域名（线上）打开。换设备、换浏览器、换端口，进度都不通用。
+
+**动词总数比各页加起来少？**
+首页的全动词表跨课去重了，同一动词在多课出现只留一条。各课组页内部是完整的。
+
+**改了内容要重做吗？**
+改 `lessons.json` 后重跑脚本即可覆盖重建。若已发布到线上或已传知识库，需要重新发布 / 重新上传。
+
+**输出文件名是中文，会不会有问题？**
+脚本已做 URL 编码，正常使用即可，不要手工改成拼音，否则页面间链接会断。
+
+## 七、版权提示
+
+本 skill 只包含模板与脚本，**不含任何教材内容**。生成物会包含你提供的教材文本，请自行确认使用范围；公开发布时不要连带教材 PDF 原件。
