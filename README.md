@@ -122,3 +122,7 @@ python scripts/build_workbench.py lessons.json --out ./输出目录
 ## 七、版权提示
 
 本 skill 只包含模板与脚本，**不含任何教材内容**。生成物会包含你提供的教材文本，请自行确认使用范围；公开发布时不要连带教材 PDF 原件。
+
+## 八、许可
+
+[MIT License](LICENSE) © 2026 wing1107
